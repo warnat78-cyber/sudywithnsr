@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel – RU Notes NSR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Hind:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--orange:#FF6B2C;--orange-light:#FFF0E8;--orange-dark:#e05520;--blue:#1A56D6;--blue-light:#EBF2FF;--green:#15803D;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--purple:#7C3AED;--purple-light:#EDE9FE;--dark:#1a1a2e;--gray:#64748B;--light:#F8FAFC;--white:#fff;--shadow:0 4px 24px rgba(0,0,0,0.10);}
+    body{font-family:'Hind',sans-serif;background:var(--light);color:var(--dark);min-height:100vh;}
+    #loginScreen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);display:flex;align-items:center;justify-content:center;}
+    .login-box{background:var(--white);border-radius:20px;padding:48px 40px;width:100%;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+    .login-logo{font-family:'Baloo 2',sans-serif;font-size:2rem;font-weight:800;color:var(--orange);margin-bottom:4px;}
+    .login-logo span{color:var(--blue);}
+    .login-sub{font-size:0.9rem;color:var(--gray);margin-bottom:28px;}
+    .login-label{display:block;text-align:left;font-size:0.85rem;font-weight:600;color:var(--dark);margin-bottom:6px;}
+    .login-input{width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:'Hind',sans-serif;outline:none;transition:border 0.2s;margin-bottom:18px;}
+    .login-input:focus{border-color:var(--orange);}
+    .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--orange),#f59e0b);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;}
+    .login-err{color:var(--red);font-size:0.85rem;margin-top:10px;display:none;}
+    #adminPanel{display:none;}
+    .top-bar{background:var(--dark);color:#fff;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .top-logo{font-family:'Baloo 2',sans-serif;font-size:1.15rem;font-weight:800;color:var(--orange);}
+    .top-logo span{color:#60a5fa;}
+    .top-right{display:flex;align-items:center;gap:10px;}
+    .sheet-badge{padding:4px 12px;border-radius:50px;font-size:0.76rem;font-weight:700;}
+    .s-ok{background:#14532d;color:#86efac;}
+    .s-err{background:#7f1d1d;color:#fca5a5;}
+    .s-loading{background:#1e3a5f;color:#93c5fd;}
+    .logout-btn{background:var(--red);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'Hind',sans-serif;}
+    .admin-body{display:flex;min-height:calc(100vh - 58px);}
+    .sidebar{width:225px;background:var(--white);border-right:2px solid #f1f5f9;padding:18px 0;flex-shrink:0;}
+    .sb-title{padding:0 18px 8px;font-size:0.7rem;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;}
+    .sb-item{display:flex;align-items:center;gap:9px;padding:10px 18px;font-size:0.9rem;font-weight:600;cursor:pointer;color:var(--gray);transition:all 0.15s;border-left:3px solid transparent;}
+    .sb-item:hover{background:var(--orange-light);color:var(--orange);}
+    .sb-item.active{background:var(--orange-light);color:var(--orange);border-left-color:var(--orange);}
+    .sb-sep{height:1px;background:#f1f5f9;margin:10px 14px;}
+    .main{flex:1;padding:26px;overflow-y:auto;}
+    .page{display:none;}
+    .page.active{display:block;}
+    .page-title{font-family:'Baloo 2',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:20px;}
+    .page-title span{color:var(--orange);}
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:22px;}
+    .stat-card{background:var(--white);border-radius:14px;padding:18px;box-shadow:var(--shadow);text-align:center;border-top:4px solid var(--orange);}
+    .stat-num{font-family:'Baloo 2',sans-serif;font-size:1.9rem;font-weight:800;color:var(--dark);}
+    .stat-label{font-size:0.78rem;color:var(--gray);margin-top:3px;}
+    .card{background:var(--white);border-radius:16px;padding:22px;box-shadow:var(--shadow);margin-bottom:20px;}
+    .card-title{font-family:'Baloo 2',sans-serif;font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--dark);}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+    .form-group{display:flex;flex-direction:column;gap:4px;}
+    .form-group.full{grid-column:1/-1;}
+    label{font-size:0.8rem;font-weight:600;color:var(--dark);}
+    input[type=text],select,textarea{padding:9px 13px;border:2px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:'Hind',sans-serif;outline:none;transition:border 0.2s;width:100%;}
+    input[type=text]:focus,select:focus,textarea:focus{border-color:var(--orange);}
+    textarea{resize:vertical;min-height:60px;}
+    .radio-group{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;}
+    .radio-opt{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.86rem;font-weight:600;}
+    .btn-primary{background:linear-gradient(135deg,var(--orange),#f59e0b);color:#fff;border:none;padding:10px 22px;border-radius:10px;font-size:0.9rem;font-weight:700;font-family:'Baloo 2',sans-serif;cursor:pointer;transition:opacity 0.2s;margin-top:4px;}
+    .btn-primary:hover{opacity:0.88;}
+    .btn-del{background:var(--red-light);color:var(--red);border:none;padding:5px 11px;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Hind',sans-serif;}
+    .btn-del:hover{background:var(--red);color:#fff;}
+    .btn-sec{background:#f1f5f9;color:var(--gray);border:none;padding:7px 14px;border-radius:8px;font-size:0.84rem;font-weight:600;cursor:pointer;font-family:'Hind',sans-serif;}
+    .btn-sec:hover{background:#e2e8f0;}
+    .table-box{background:var(--white);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-top:6px;}
+    .table-box table{width:100%;border-collapse:collapse;}
+    .table-box th{background:var(--dark);color:#fff;padding:11px 14px;text-align:left;font-family:'Baloo 2',sans-serif;font-size:0.84rem;}
+    .table-box td{padding:10px 14px;font-size:0.86rem;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    .table-box tr:last-child td{border-bottom:none;}
+    .table-box tr:hover td{background:#fafafa;}
+    .empty-row td{text-align:center;color:var(--gray);padding:32px;font-size:0.88rem;}
+    .tag{display:inline-block;padding:2px 9px;border-radius:50px;font-size:0.72rem;font-weight:700;}
+    .tn{background:var(--blue-light);color:var(--blue);}
+    .tp{background:var(--orange-light);color:var(--orange-dark);}
+    .tb{background:var(--purple-light);color:var(--purple);}
+    .ta{background:var(--green-light);color:var(--green);}
+    .ts{background:#fef9c3;color:#854d0e;}
+    .search-bar{width:100%;padding:9px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:0.88rem;font-family:'Hind',sans-serif;outline:none;margin-bottom:12px;transition:border 0.2s;}
+    .search-bar:focus{border-color:var(--orange);}
+    .info-box{background:var(--blue-light);border:1.5px solid #93c5fd;border-radius:10px;padding:14px;font-size:0.85rem;color:#1e3a8a;margin-bottom:16px;line-height:1.7;}
+    .warn-box{background:#fef9c3;border:1.5px solid #fde047;border-radius:10px;padding:14px;font-size:0.85rem;color:#713f12;margin-bottom:16px;line-height:1.7;}
+    .spinner{display:inline-block;width:24px;height:24px;border:3px solid #e2e8f0;border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .loading-msg{text-align:center;padding:32px;color:var(--gray);font-size:0.88rem;}
+    #toast{position:fixed;bottom:24px;right:24px;z-index:99999;background:var(--dark);color:#fff;padding:12px 20px;border-radius:10px;font-size:0.88rem;font-weight:600;opacity:0;transform:translateY(16px);transition:all 0.3s;pointer-events:none;max-width:340px;}
+    #toast.show{opacity:1;transform:translateY(0);}
+    #toast.success{border-left:4px solid var(--green);}
+    #toast.error{border-left:4px solid var(--red);}
+    #toast.info{border-left:4px solid var(--blue);}
+    .modal-ov{display:none;position:fixed;inset:0;z-index:8888;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;}
+    .modal-ov.open{display:flex;}
+    .modal-box{background:var(--white);border-radius:16px;padding:28px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+    .modal-title{font-family:'Baloo 2',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:12px;}
+    .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+    .btn-cfm-del{background:var(--red);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:0.86rem;font-weight:600;cursor:pointer;}
+    @media(max-width:700px){.sidebar{display:none;}.form-grid{grid-template-columns:1fr;}.stats-row{grid-template-columns:1fr 1fr;}}
+  </style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div style="font-size:2.8rem;margin-bottom:10px;">🔐</div>
+    <div class="login-logo">RU Notes <span>NSR</span></div>
+    <div class="login-sub">Admin Panel — Sirf Authorized Access</div>
+    <label class="login-label">Password</label>
+    <input type="password" class="login-input" id="pwdInput" placeholder="Password daalo..." onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">🔓 Login Karo</button>
+    <div class="login-err" id="loginErr">❌ Galat password!</div>
+  </div>
+</div>
+
+<div id="adminPanel">
+  <div class="top-bar">
+    <div class="top-logo">⚙️ RU Notes <span>Admin</span></div>
+    <div class="top-right">
+      <span id="sBadge" class="sheet-badge s-loading">⏳ Sheet...</span>
+      <span style="background:#ffffff18;padding:4px 11px;border-radius:50px;font-size:0.76rem;color:#94a3b8;">👤 Natwar</span>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <div class="sidebar">
+      <div class="sb-title">Main</div>
+      <div class="sb-item active" onclick="gotoPage('dashboard',this)"><span>📊</span>Dashboard</div>
+      <div class="sb-item" onclick="gotoPage('add',this)"><span>➕</span>Content Add Karo</div>
+      <div class="sb-sep"></div>
+      <div class="sb-title">Pages</div>
+      <div class="sb-item" onclick="gotoPage('pgBCA',this)"><span>💻</span>BCA</div>
+      <div class="sb-item" onclick="gotoPage('pgBA',this)"><span>📖</span>BA</div>
+      <div class="sb-item" onclick="gotoPage('pgBSC',this)"><span>🔬</span>BSc</div>
+      <div class="sb-item" onclick="gotoPage('pgBCOM',this)"><span>💰</span>B.Com</div>
+      <div class="sb-item" onclick="gotoPage('pgCl10',this)"><span>📚</span>Class 10</div>
+      <div class="sb-item" onclick="gotoPage('pgCl12',this)"><span>📝</span>Class 12</div>
+      <div class="sb-sep"></div>
+      <div class="sb-item" onclick="gotoPage('setup',this)"><span>⚙️</span>Setup & Help</div>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">📊 <span>Dashboard</span></div>
+        <div class="stats-row" id="statsRow"><div class="stat-card"><div class="spinner"></div></div></div>
+        <div class="card">
+          <div class="card-title">🕐 Recent Activity</div>
+          <div id="activityLog"><div class="loading-msg"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+
+      <!-- ADD CONTENT -->
+      <div class="page" id="page-add">
+        <div class="page-title">➕ Content <span>Add Karo</span></div>
+        <div class="warn-box">⚠️ <strong>Zaroori:</strong> Content add karne ke baad <strong>Google Sheet</strong> mein bhi same row add karni hogi — tabhi live website pe dikhe ga. Neeche sheet ka button hai.</div>
+        <div class="card">
+          <div class="card-title">📄 Naya Entry</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Page / Course *</label>
+              <select id="fPage">
+                <option value="">-- Select --</option>
+                <option value="BCA">BCA</option>
+                <option value="BA">BA</option>
+                <option value="BSc">BSc</option>
+                <option value="BCom">B.Com</option>
+                <option value="Class10">Class 10</option>
+                <option value="Class12-Science">Class 12 Science</option>
+                <option value="Class12-Arts">Class 12 Arts</option>
+                <option value="Class12-Commerce">Class 12 Commerce</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Subject / Title *</label>
+              <input type="text" id="fSubject" placeholder="C Programming, Physics..."/>
+            </div>
+            <div class="form-group">
+              <label>Semester / Year</label>
+              <input type="text" id="fSem" placeholder="Sem 1, 2024..."/>
+            </div>
+            <div class="form-group">
+              <label>Type *</label>
+              <div class="radio-group">
+                <label class="radio-opt"><input type="radio" name="fType" value="Notes" checked/> 📄 Notes</label>
+                <label class="radio-opt"><input type="radio" name="fType" value="PYQ"/> 📋 PYQ</label>
+                <label class="radio-opt"><input type="radio" name="fType" value="Both"/> Both</label>
+              </div>
+            </div>
+            <div class="form-group full">
+              <label>Google Drive Link *</label>
+              <input type="text" id="fLink" placeholder="https://drive.google.com/file/d/FILE_ID/view"/>
+            </div>
+            <div class="form-group full">
+              <label>Description (optional)</label>
+              <textarea id="fDesc" placeholder="Short description..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="fStatus">
+                <option value="Available">✅ Available</option>
+                <option value="Coming Soon">⏳ Coming Soon</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-primary" onclick="addEntry()">➕ Add Karo (Local)</button>
+            <a href="https://docs.google.com/spreadsheets/d/1LspQxmGttmg32AZK7zdDZsHxY6kpIc7UOcnmfwEdrk4/edit" target="_blank" class="btn-primary" style="text-decoration:none;background:linear-gradient(135deg,#15803D,#16a34a);">📊 Google Sheet Kholo</a>
+          </div>
+          <div id="addPreview" style="margin-top:16px;display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px;font-size:0.85rem;color:#14532d;"></div>
+        </div>
+      </div>
+
+      <!-- PAGE TABLES -->
+      <div class="page" id="page-pgBCA">
+        <div class="page-title">💻 BCA <span>Content</span></div>
+        <input class="search-bar" placeholder="🔍 Search..." oninput="filterT('BCA',this.value)"/>
+        <div id="tbl-BCA"><div class="loading-msg"><div class="spinner"></div><br>Loading...</div></div>
+      </div>
+      <div class="page" id="page-pgBA">
+        <div class="page-title">📖 BA <span>Content</span></div>
+        <input class="search-bar" placeholder="🔍 Search..." oninput="filterT('BA',this.value)"/>
+        <div id="tbl-BA"><div class="loading-msg"><div class="spinner"></div></div></div>
+      </div>
+      <div class="page" id="page-pgBSC">
+        <div class="page-title">🔬 BSc <span>Content</span></div>
+        <input class="search-bar" placeholder="🔍 Search..." oninput="filterT('BSc',this.value)"/>
+        <div id="tbl-BSc"><div class="loading-msg"><div class="spinner"></div></div></div>
+      </div>
+      <div class="page" id="page-pgBCOM">
+        <div class="page-title">💰 B.Com <span>Content</span></div>
+        <input class="search-bar" placeholder="🔍 Search..." oninput="filterT('BCom',this.value)"/>
+        <div id="tbl-BCom"><div class="loading-msg"><div class="spinner"></div></div></div>
+      </div>
+      <div class="page" id="page-pgCl10">
+        <div class="page-title">📚 Class 10 <span>Content</span></div>
+        <input class="search-bar" placeholder="🔍 Search..." oninput="filterT('Class10',this.value)"/>
+        <div id="tbl-Class10"><div class="loading-msg"><div class="spinner"></div></div></div>
+      </div>
+      <div class="page" id="page-pgCl12">
+        <div class="page-title">📝 Class 12 <span>Content</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn-sec" onclick="c12f('all')">Sab</button>
+          <button class="btn-sec" onclick="c12f('Science')">Science</button>
+          <button class="btn-sec" onclick="c12f('Arts')">Arts</button>
+          <button class="btn-sec" onclick="c12f('Commerce')">Commerce</button>
+        </div>
+        <input class="search-bar" placeholder="🔍 Search..." oninput="filterC12(this.value)"/>
+        <div id="tbl-Class12"><div class="loading-msg"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- SETUP -->
+      <div class="page" id="page-setup">
+        <div class="page-title">⚙️ Setup & <span>Help</span></div>
+        <div class="card">
+          <div class="card-title">📋 Google Sheet Setup — ONE TIME</div>
+          <ol style="font-size:0.87rem;color:var(--gray);line-height:2.3;padding-left:18px;">
+            <li>Sheet kholo: <a href="https://docs.google.com/spreadsheets/d/1LspQxmGttmg32AZK7zdDZsHxY6kpIc7UOcnmfwEdrk4/edit" target="_blank" style="color:var(--blue);font-weight:600;">Click karo</a></li>
+            <li>Row 1 mein exactly ye headers daalo:<br>
+              <code style="background:#f1f5f9;padding:3px 10px;border-radius:6px;font-size:0.83rem;">page &nbsp;|&nbsp; subject &nbsp;|&nbsp; sem &nbsp;|&nbsp; type &nbsp;|&nbsp; link &nbsp;|&nbsp; desc &nbsp;|&nbsp; status</code>
+            </li>
+            <li><strong>File → Share → Publish to web</strong></li>
+            <li>Sheet1 select karo → Format: <strong>CSV</strong> → <strong>Publish</strong></li>
+            <li>Done! ✅ Website automatically sheet se data load karegi</li>
+          </ol>
+        </div>
+        <div class="card">
+          <div class="card-title">📝 Sheet mein row kaise add karein</div>
+          <p style="font-size:0.87rem;color:var(--gray);line-height:1.8;">Admin panel se add karo <strong>→</strong> Preview copy karo <strong>→</strong> Sheet mein paste karo. Ya directly Sheet mein likhna zyada easy hai!</p>
+          <br/>
+          <div class="info-box">
+            ✅ <strong>Ek row ka format:</strong><br>
+            <code style="font-size:0.83rem;">BCA | C Programming | Sem 1 | Notes | https://drive.google.com/... | Basics to Pointers | Available</code>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔄 Data Refresh</div>
+          <button class="btn-primary" onclick="loadSheet(true)">🔄 Sheet Se Refresh Karo</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-ov" id="delModal">
+  <div class="modal-box">
+    <div class="modal-title">🗑️ Delete Confirm</div>
+    <p style="font-size:0.88rem;color:var(--gray);">Is entry ko delete karna chahte ho?</p>
+    <p id="delItemName" style="font-weight:700;margin-top:6px;"></p>
+    <div class="info-box" style="margin-top:12px;font-size:0.82rem;">
+      ℹ️ Admin se hatega — Google Sheet se bhi manually hatana padega: <a href="https://docs.google.com/spreadsheets/d/1LspQxmGttmg32AZK7zdDZsHxY6kpIc7UOcnmfwEdrk4/edit" target="_blank" style="color:var(--blue);font-weight:600;">Sheet kholo</a>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeDelModal()">Cancel</button>
+      <button class="btn-cfm-del" onclick="confirmDel()">Delete Karo</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const PASS='natwarx2007';
+const SHEET_ID='1LspQxmGttmg32AZK7zdDZsHxY6kpIc7UOcnmfwEdrk4';
+const CSV='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/pub?gid=0&single=true&output=csv';
+const SK='nsr_items3', AK='nsr_act3';
+
+let items=[], act=[], _c12='all', _delIdx=null;
+
+function doLogin(){
+  if(document.getElementById('pwdInput').value===PASS){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    act=JSON.parse(localStorage.getItem(AK)||'[]');
+    loadSheet(false);
+  } else {
+    const e=document.getElementById('loginErr');
+    e.style.display='block';
+    document.getElementById('pwdInput').value='';
+    setTimeout(()=>e.style.display='none',3000);
+  }
+}
+function doLogout(){
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('pwdInput').value='';
+}
+
+async function loadSheet(force){
+  const b=document.getElementById('sBadge');
+  b.className='sheet-badge s-loading'; b.textContent='⏳ Loading...';
+  try{
+    const cached=localStorage.getItem(SK);
+    if(cached&&!force){items=JSON.parse(cached);renderAll();}
+    const r=await fetch(CSV+'&t='+Date.now());
+    if(!r.ok) throw new Error();
+    const txt=await r.text();
+    const rows=parseCSV(txt);
+    if(rows.length<2){
+      b.className='sheet-badge s-err';b.textContent='⚠️ Sheet Empty';
+      if(!cached)renderAll();return;
+    }
+    const h=rows[0].map(x=>x.trim().toLowerCase());
+    const ix={page:h.indexOf('page'),subject:h.indexOf('subject'),sem:h.indexOf('sem'),type:h.indexOf('type'),link:h.indexOf('link'),desc:h.indexOf('desc'),status:h.indexOf('status')};
+    items=rows.slice(1).filter(r=>r.some(c=>c.trim())).map(r=>({
+      page:(r[ix.page]||'').trim(),
+      subject:(r[ix.subject]||'').trim(),
+      sem:(r[ix.sem]||'').trim(),
+      type:(r[ix.type]||'Notes').trim(),
+      link:cvtLink((r[ix.link]||'').trim()),
+      desc:(r[ix.desc]||'').trim(),
+      status:(r[ix.status]||'Available').trim()
+    })).filter(i=>i.page&&i.subject);
+    localStorage.setItem(SK,JSON.stringify(items));
+    b.className='sheet-badge s-ok';b.textContent='✅ Sheet Connected';
+    renderAll();
+    if(force)showToast('✅ Data refresh ho gaya!','success');
+  }catch(e){
+    b.className='sheet-badge s-err';b.textContent='❌ Sheet Error';
+    const c=localStorage.getItem(SK);
+    if(c&&!items.length)items=JSON.parse(c);
+    renderAll();
+    if(force)showToast('❌ Sheet error! Publish karo.','error');
+  }
+}
+
+function parseCSV(t){
+  const rows=[];
+  for(const line of t.split('\n')){
+    if(!line.trim())continue;
+    const cols=[];let cur='';let q=false;
+    for(const c of line){
+      if(c==='"'){q=!q;}else if(c===','&&!q){cols.push(cur);cur='';}else cur+=c;
+    }
+    cols.push(cur);
+    rows.push(cols.map(c=>c.trim().replace(/^"|"$/g,'')));
+  }
+  return rows;
+}
+
+function cvtLink(u){
+  if(!u)return'#';
+  const m=u.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m?'https://drive.google.com/uc?export=download&id='+m[1]:u;
+}
+
+function addEntry(){
+  const page=document.getElementById('fPage').value.trim();
+  const subject=document.getElementById('fSubject').value.trim();
+  const sem=document.getElementById('fSem').value.trim();
+  const type=document.querySelector('input[name="fType"]:checked').value;
+  const link=document.getElementById('fLink').value.trim();
+  const desc=document.getElementById('fDesc').value.trim();
+  const status=document.getElementById('fStatus').value;
+  if(!page||!subject||!link){showToast('❌ Page, Subject aur Link required!','error');return;}
+  const item={page,subject,sem,type,link:cvtLink(link),desc,status};
+  items.push(item);
+  localStorage.setItem(SK,JSON.stringify(items));
+  logAct('➕ '+subject+' ('+page+')');
+  renderAll();
+  // Show preview for sheet
+  const prev=document.getElementById('addPreview');
+  prev.style.display='block';
+  prev.innerHTML='<strong>✅ Locally add ho gaya!</strong><br><br>Ab Google Sheet mein bhi ye row add karo:<br><br><code style="background:#dcfce7;padding:6px 10px;border-radius:6px;display:block;margin-top:6px;font-size:0.82rem;">'+[page,subject,sem,type,link,desc,status].join(' | ')+'</code><br><a href="https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/edit" target="_blank" style="color:#15803D;font-weight:700;">📊 Sheet kholo →</a>';
+  // Reset
+  document.getElementById('fSubject').value='';
+  document.getElementById('fSem').value='';
+  document.getElementById('fLink').value='';
+  document.getElementById('fDesc').value='';
+  document.getElementById('fPage').value='';
+  showToast('✅ "'+subject+'" add ho gaya! Sheet mein bhi add karo.','success');
+}
+
+function renderAll(){
+  renderDash();
+  ['BCA','BA','BSc','BCom','Class10'].forEach(p=>{
+    const el=document.getElementById('tbl-'+p);
+    if(el)el.innerHTML=tblHTML(items.filter(i=>i.page===p));
+  });
+  renderC12(_c12);
+}
+
+function tblHTML(arr){
+  if(!arr.length)return'<div class="table-box"><table><tbody><tr class="empty-row"><td colspan="5">📭 Koi entry nahi. Sheet mein add karo.</td></tr></tbody></table></div>';
+  return'<div class="table-box"><table><thead><tr><th>Subject</th><th>Sem/Year</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+    arr.map(item=>{
+      const idx=items.indexOf(item);
+      return`<tr><td><strong>${item.subject}</strong>${item.desc?'<br><small style="color:var(--gray)">'+item.desc+'</small>':''}</td><td>${item.sem||'—'}</td><td><span class="tag ${item.type==='Notes'?'tn':item.type==='PYQ'?'tp':'tb'}">${item.type}</span></td><td><span class="tag ${item.status==='Available'?'ta':'ts'}">${item.status}</span></td><td style="white-space:nowrap"><a href="${item.link}" target="_blank" style="background:var(--blue-light);color:var(--blue);padding:4px 9px;border-radius:6px;font-size:0.76rem;font-weight:600;text-decoration:none;margin-right:4px;">🔗</a><button class="btn-del" onclick="askDel(${idx})">🗑️</button></td></tr>`;
+    }).join('')+'</tbody></table></div>';
+}
+
+function renderDash(){
+  const t=items.length,av=items.filter(i=>i.status==='Available').length,no=items.filter(i=>i.type==='Notes'||i.type==='Both').length,pq=items.filter(i=>i.type==='PYQ'||i.type==='Both').length;
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${t}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card" style="border-top-color:var(--green)"><div class="stat-num">${av}</div><div class="stat-label">Available</div></div>
+    <div class="stat-card" style="border-top-color:var(--blue)"><div class="stat-num">${no}</div><div class="stat-label">Notes</div></div>
+    <div class="stat-card" style="border-top-color:var(--purple)"><div class="stat-num">${pq}</div><div class="stat-label">PYQ</div></div>`;
+  const el=document.getElementById('activityLog');
+  el.innerHTML=act.length?act.slice(0,10).map(a=>'<div style="padding:7px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:10px;"><span>'+a.msg+'</span><span style="font-size:0.74rem;color:#94a3b8;white-space:nowrap;">'+a.time+'</span></div>').join(''):'<span style="color:var(--gray);font-size:0.86rem;">Koi activity nahi.</span>';
+}
+
+function c12f(f){_c12=f;renderC12(f);}
+function renderC12(f){
+  let arr=items.filter(i=>i.page.startsWith('Class12'));
+  if(f!=='all')arr=arr.filter(i=>i.page.includes(f));
+  const el=document.getElementById('tbl-Class12');
+  if(el)el.innerHTML=tblHTML(arr);
+}
+function filterC12(q){
+  let arr=items.filter(i=>i.page.startsWith('Class12'));
+  if(_c12!=='all')arr=arr.filter(i=>i.page.includes(_c12));
+  if(q)arr=arr.filter(i=>i.subject.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById('tbl-Class12');
+  if(el)el.innerHTML=tblHTML(arr);
+}
+function filterT(p,q){
+  let arr=items.filter(i=>i.page===p);
+  if(q)arr=arr.filter(i=>i.subject.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById('tbl-'+p);
+  if(el)el.innerHTML=tblHTML(arr);
+}
+
+function askDel(idx){
+  _delIdx=idx;
+  document.getElementById('delItemName').textContent='"'+items[idx].subject+'" – '+items[idx].page;
+  document.getElementById('delModal').classList.add('open');
+}
+function closeDelModal(){document.getElementById('delModal').classList.remove('open');_delIdx=null;}
+function confirmDel(){
+  if(_delIdx===null)return;
+  const item=items[_delIdx];
+  logAct('🗑️ '+item.subject+' ('+item.page+')');
+  items.splice(_delIdx,1);
+  localStorage.setItem(SK,JSON.stringify(items));
+  renderAll();
+  closeDelModal();
+  showToast('🗑️ Locally delete ho gaya. Sheet se bhi hatao!','info');
+  setTimeout(()=>window.open('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/edit','_blank'),1000);
+}
+
+function logAct(msg){
+  act.unshift({msg,time:new Date().toLocaleString('hi-IN')});
+  if(act.length>20)act=act.slice(0,20);
+  localStorage.setItem(AK,JSON.stringify(act));
+}
+
+function gotoPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+}
+
+let _tt;
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+(type||'success');
+  clearTimeout(_tt);_tt=setTimeout(()=>t.className='',4500);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDelModal();});
+</script>
+</body>
+</html>
